@@ -264,29 +264,77 @@ export async function renderStatsCard(
             bgColor={bgColor}
             textColor={textColor}
           />
-          {/* Score Badge in grid */}
+          {/* Score Progress Bar */}
           {!hideRank && (
             <div
               style={{
                 display: 'flex',
-                alignItems: 'center',
-                gap: 6,
-                background: borderColor,
-                color: bgColor,
-                padding: '8px 12px',
-                border: `3px solid ${borderColor}`,
-                fontSize: 9,
-                fontWeight: 900,
-                textTransform: 'uppercase',
-                letterSpacing: '0.05em',
+                flexDirection: 'column',
+                gap: 4,
                 flex: 1,
+                border: `3px solid ${borderColor}`,
+                padding: '6px 12px',
                 boxShadow: `3px 3px 0px ${borderColor}`,
+                background: bgColor,
               }}
             >
-              <TrophyIcon color={bgColor} size={12} />
-              <span>{t.score}: {formatScore(rankInfo.score)}</span>
-              <span style={{ opacity: 0.6 }}>|</span>
-              <span>{t.percentile} {rankInfo.percentile.toFixed(1)}%</span>
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                }}
+              >
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 4,
+                    fontSize: 9,
+                    fontWeight: 900,
+                    color: textColor,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.05em',
+                  }}
+                >
+                  <TrophyIcon color={iconColor} size={10} />
+                  <span>{t.score}: {formatScore(rankInfo.score)}</span>
+                </div>
+                <div
+                  style={{
+                    display: 'flex',
+                    fontSize: 9,
+                    fontWeight: 900,
+                    color: textColor,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.05em',
+                    opacity: 0.6,
+                  }}
+                >
+                  {t.percentile} {rankInfo.percentile.toFixed(1)}%
+                </div>
+              </div>
+              {/* Progress Bar Track */}
+              <div
+                style={{
+                  display: 'flex',
+                  width: '100%',
+                  height: 8,
+                  background: `${borderColor}33`,
+                  border: `2px solid ${borderColor}`,
+                  overflow: 'hidden',
+                }}
+              >
+                {/* Progress Bar Fill */}
+                <div
+                  style={{
+                    display: 'flex',
+                    width: `${Math.min(rankInfo.percentile, 100)}%`,
+                    height: '100%',
+                    background: rankInfo.color,
+                  }}
+                />
+              </div>
             </div>
           )}
         </div>

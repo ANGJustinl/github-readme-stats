@@ -29,13 +29,12 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Username parameter is required" }, { status: 400 })
   }
 
-  console.log("[v0] Fetching stats for username:", params.username)
-  console.log("[v0] Params:", JSON.stringify(params, null, 2))
+
 
   try {
     // Fetch GitHub stats
     const stats = await fetchGitHubStats(params.username)
-    console.log("[v0] Stats fetched:", JSON.stringify(stats))
+
 
     const svg = await renderStatsCard(stats, params.username, {
       theme: params.theme,
@@ -46,8 +45,6 @@ export async function GET(request: NextRequest) {
       customColors: Object.keys(params.customColors).length > 0 ? params.customColors : undefined,
     })
 
-    console.log("[v0] SVG rendered, length:", svg.length)
-
     // Return SVG with appropriate headers and caching
     return new NextResponse(svg, {
       headers: {
@@ -56,7 +53,7 @@ export async function GET(request: NextRequest) {
       },
     })
   } catch (error) {
-    console.error("[v0] Error in API route:", error)
+    console.error("Error in API route:", error)
 
     try {
       const errorMessage = error instanceof Error ? error.message : "An unexpected error occurred"
