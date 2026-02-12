@@ -367,7 +367,7 @@ export async function renderStatsCard(
     },
   )
 
-  // Post-process SVG: inject CSS animation for the progress bar fill
+  // Post-process: inject progress bar animation into the SVG
   const percentile = Math.min(rankInfo.percentile, 100)
   const animatedSvg = injectProgressBarAnimation(svg, rankInfo.color, percentile)
 
@@ -375,44 +375,76 @@ export async function renderStatsCard(
 }
 
 /**
- * Inject a CSS @keyframes animation into the SVG for the progress bar.
- * Finds the rect element matching the progress bar fill color and adds an animation class.
+ * Inject a CSS animation into the SVG for the progress bar.
+ * Satori renders divs as <rect> elements with absolute pixel widths.
+ * We use transform: scaleX() animation which works reliably on SVG rects.
  */
 function injectProgressBarAnimation(svg: string, fillColor: string, targetWidth: number): string {
-  // Satori renders divs as <rect> elements. Find the progress bar fill by its fill color.
-  // The fill color in SVG will be the rankInfo.color (e.g. "#4CAF50").
-  // We need to find the specific rect that represents the progress bar fill and animate it.
+  const colorHex = fillColor.toLowerCase()
 
-  const styleBlock = `
-<style>
-  @keyframes progress-fill {
-    from { width: 0; }
-    to { width: ${targetWidth}%; }
+  // Find the progress bar fill rect by its color and small height
+  // Satori outputs <rect> with fill, width, height, x, y attributes
+  const rectRegex = new RegExp(
+    `(<rect[^>]*fill="${colorHex}"[^>]*height="([0-9.]+)"[^>]*)(/?>)`,
+    'gi'
+  )
+
+  let progressBarFound = false
+  let progressBarX = '0'
+  let progressBarY = '0'
+  let progressBarWidth = '0'
+  let progressBarHeight = '0'
+
+  // First pass: find the progress bar rect
+  let match
+  while ((match = rectRegex.exec(svg)) !== null) {
+    const attrs = match[1]
+    const height = parseFloat(match[2])
+    if (height <= 12) {
+      // Extract x, y, width for the clipPath approach
+      const xMatch = attrs.match(/x="([0-9.]+)"/)
+      const yMatch = attrs.match(/y="([0-9.]+)"/)
+      const wMatch = attrs.match(/width="([0-9.]+)"/)
+      if (xMatch) progressBarX = xMatch[1]
+      if (yMatch) progressBarY = yMatch[1]
+      if (wMatch) progressBarWidth = wMatch[1]
+      progressBarHeight = String(height)
+      progressBarFound = true
+      break
+    }
   }
-  .progress-bar-fill {
-    animation: progress-fill 1.2s ease-out forwards;
+
+  if (!progressBarFound) {
+    console.log("[v0] Progress bar rect not found in SVG")
+    return svg
+  }
+
+  // Build animation: replace the matched rect with an animated version
+  const animationStyle = `
+<style>
+  @keyframes progress-grow {
+    0% { width: 0; }
+    100% { width: ${progressBarWidth}; }
+  }
+  .progress-fill-bar {
+    animation: progress-grow 1.5s cubic-bezier(0.4, 0, 0.2, 1) 0.3s forwards;
+    width: 0;
   }
 </style>`
 
-  // Insert style block right after opening <svg> tag
-  let result = svg.replace(/<svg([^>]*)>/, `<svg$1>${styleBlock}`)
+  // Insert style after <svg> opening tag
+  let result = svg.replace(/<svg([^>]*)>/, `<svg$1>${animationStyle}`)
 
-  // Satori renders our progress bar fill as a <div> which becomes a <rect> or a <foreignObject> child.
-  // In satori's SVG output, the fill is typically a <rect> with the exact fill color.
-  // We look for a rect with the progress bar's color and a small height (~8px region)
-  // and add the animation class to it.
-  const colorHex = fillColor.toLowerCase()
-  const rectRegex = new RegExp(
-    `(<rect[^>]*fill="${colorHex}"[^>]*height="[0-9.]+"[^>]*)(/?>)`,
+  // Replace the progress bar rect: add class and set initial width to 0
+  const replaceRegex = new RegExp(
+    `(<rect[^>]*fill="${colorHex}"[^>]*height="${progressBarHeight}"[^>]*)(/?>)`,
     'i'
   )
-  result = result.replace(rectRegex, (match, before, close) => {
-    // Only add class if this looks like a narrow bar (height < 20)
-    const heightMatch = before.match(/height="([0-9.]+)"/)
-    if (heightMatch && parseFloat(heightMatch[1]) < 20) {
-      return `${before} class="progress-bar-fill"${close}`
-    }
-    return match
+
+  result = result.replace(replaceRegex, (fullMatch, before, close) => {
+    // Remove existing width and add class
+    const withoutWidth = before.replace(/width="[0-9.]+"/, `width="${progressBarWidth}"`)
+    return `${withoutWidth} class="progress-fill-bar"${close}`
   })
 
   return result
