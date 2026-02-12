@@ -58,18 +58,13 @@ export async function renderStatsCard(
         boxSizing: 'border-box',
       }}
     >
-      {/* Pixel Grid Pattern */}
+      {/* Pixel Grid Pattern - rendered as dots to avoid pattern NaN issues */}
       <div
         style={{
           position: 'absolute',
           inset: 0,
-          backgroundImage: `
-            linear-gradient(${borderColor}22 1px, transparent 1px),
-            linear-gradient(90deg, ${borderColor}22 1px, transparent 1px)
-          `,
-          backgroundSize: '16px 16px',
-          opacity: 0.3,
           display: 'flex',
+          opacity: 0.15,
         }}
       />
 
@@ -314,7 +309,7 @@ export async function renderStatsCard(
                   {t.percentile} {rankInfo.percentile.toFixed(1)}%
                 </div>
               </div>
-              {/* Progress Bar Track */}
+              {/* Progress Bar Track - fill is injected post-render for animation */}
               <div
                 style={{
                   display: 'flex',
@@ -322,19 +317,10 @@ export async function renderStatsCard(
                   height: 8,
                   background: `${borderColor}33`,
                   border: `2px solid ${borderColor}`,
-                  overflow: 'hidden',
                 }}
               >
-                {/* Progress Bar Fill - use data-progress-bar marker */}
-                <div
-                  data-progress-bar="true"
-                  style={{
-                    display: 'flex',
-                    width: `${Math.min(rankInfo.percentile, 100)}%`,
-                    height: '100%',
-                    background: rankInfo.color,
-                  }}
-                />
+                {/* Empty placeholder so satori renders the track container */}
+                <div style={{ display: 'flex', width: '100%', height: '100%' }} />
               </div>
             </div>
           )}
@@ -367,85 +353,97 @@ export async function renderStatsCard(
     },
   )
 
-  // Post-process: inject progress bar animation into the SVG
+  // Post-process: inject animated progress bar and pixel grid into the SVG
   const percentile = Math.min(rankInfo.percentile, 100)
-  const animatedSvg = injectProgressBarAnimation(svg, rankInfo.color, percentile)
+  const animatedSvg = injectSvgEnhancements(svg, rankInfo.color, percentile, borderColor, hideBorder)
 
   return animatedSvg
 }
 
 /**
- * Inject a CSS animation into the SVG for the progress bar.
- * Satori renders divs as <rect> elements with absolute pixel widths.
- * We use transform: scaleX() animation which works reliably on SVG rects.
+ * Inject animated progress bar fill and pixel grid pattern directly into the SVG.
+ * This avoids satori's limitations with CSS animations and complex backgroundImage patterns.
  */
-function injectProgressBarAnimation(svg: string, fillColor: string, targetWidth: number): string {
-  const colorHex = fillColor.toLowerCase()
+function injectSvgEnhancements(
+  svg: string,
+  fillColor: string,
+  percentile: number,
+  borderColor: string,
+  hideBorder: boolean,
+): string {
+  // Find the progress bar track: the small rect with the track background color (borderColor + "33")
+  // The track is a rect with height ~8 (4 inner after 2px border) and fill matching `${borderColor}33`
+  const trackColorHex = `${borderColor}33`.toLowerCase()
 
-  // Find the progress bar fill rect by its color and small height
-  // Satori outputs <rect> with fill, width, height, x, y attributes
-  const rectRegex = new RegExp(
-    `(<rect[^>]*fill="${colorHex}"[^>]*height="([0-9.]+)"[^>]*)(/?>)`,
-    'gi'
-  )
+  // Find track rect to get its position
+  const allRects = [...svg.matchAll(/<rect([^/>]*)\/?>|<rect([^>]*)>[^<]*<\/rect>/gi)]
+  let trackRect: { x: number; y: number; width: number; height: number } | null = null
 
-  let progressBarFound = false
-  let progressBarX = '0'
-  let progressBarY = '0'
-  let progressBarWidth = '0'
-  let progressBarHeight = '0'
+  for (const match of allRects) {
+    const attrs = match[1] || match[2] || ''
+    const fillMatch = attrs.match(/fill="([^"]*)"/)
+    const heightMatch = attrs.match(/height="([^"]*)"/)
+    const xMatch = attrs.match(/x="([^"]*)"/)
+    const yMatch = attrs.match(/y="([^"]*)"/)
+    const widthMatch = attrs.match(/width="([^"]*)"/)
 
-  // First pass: find the progress bar rect
-  let match
-  while ((match = rectRegex.exec(svg)) !== null) {
-    const attrs = match[1]
-    const height = parseFloat(match[2])
-    if (height <= 12) {
-      // Extract x, y, width for the clipPath approach
-      const xMatch = attrs.match(/x="([0-9.]+)"/)
-      const yMatch = attrs.match(/y="([0-9.]+)"/)
-      const wMatch = attrs.match(/width="([0-9.]+)"/)
-      if (xMatch) progressBarX = xMatch[1]
-      if (yMatch) progressBarY = yMatch[1]
-      if (wMatch) progressBarWidth = wMatch[1]
-      progressBarHeight = String(height)
-      progressBarFound = true
-      break
+    if (fillMatch && fillMatch[1].toLowerCase() === trackColorHex && heightMatch) {
+      const h = parseFloat(heightMatch[1])
+      if (h <= 12 && h > 0 && xMatch && yMatch && widthMatch) {
+        trackRect = {
+          x: parseFloat(xMatch[1]),
+          y: parseFloat(yMatch[1]),
+          width: parseFloat(widthMatch[1]),
+          height: h,
+        }
+      }
     }
   }
 
-  if (!progressBarFound) {
-    console.log("[v0] Progress bar rect not found in SVG")
-    return svg
-  }
-
-  // Build animation: replace the matched rect with an animated version
-  const animationStyle = `
+  // Build injection elements
+  const defs = `
+<defs>
+  <clipPath id="progress-clip">
+    ${trackRect ? `<rect x="${trackRect.x + 2}" y="${trackRect.y + 2}" width="${trackRect.width - 4}" height="${trackRect.height - 4}"/>` : ''}
+  </clipPath>
+  ${!hideBorder ? `<pattern id="pixel-grid" width="16" height="16" patternUnits="userSpaceOnUse">
+    <rect width="16" height="16" fill="none"/>
+    <line x1="0" y1="0" x2="16" y2="0" stroke="${borderColor}" stroke-width="0.5" opacity="0.08"/>
+    <line x1="0" y1="0" x2="0" y2="16" stroke="${borderColor}" stroke-width="0.5" opacity="0.08"/>
+  </pattern>` : ''}
+</defs>
 <style>
   @keyframes progress-grow {
     0% { width: 0; }
-    100% { width: ${progressBarWidth}; }
+    100% { width: ${trackRect ? (trackRect.width - 4) * (percentile / 100) : 0}px; }
   }
   .progress-fill-bar {
     animation: progress-grow 1.5s cubic-bezier(0.4, 0, 0.2, 1) 0.3s forwards;
-    width: 0;
   }
 </style>`
 
-  // Insert style after <svg> opening tag
-  let result = svg.replace(/<svg([^>]*)>/, `<svg$1>${animationStyle}`)
+  // Insert defs and style after opening <svg> tag
+  let result = svg.replace(/<svg([^>]*)>/, `<svg$1>${defs}`)
 
-  // Replace the progress bar rect: add class and set initial width to 0
-  const replaceRegex = new RegExp(
-    `(<rect[^>]*fill="${colorHex}"[^>]*height="${progressBarHeight}"[^>]*)(/?>)`,
-    'i'
-  )
+  // Add pixel grid overlay right after the background
+  if (!hideBorder) {
+    result = result.replace(/<svg([^>]*)>/, (m) => {
+      return m
+    })
+    // Insert grid pattern rect as one of the first visible elements (after the first rect)
+    const firstRectEnd = result.indexOf('/>', result.indexOf('<rect'))
+    if (firstRectEnd > 0) {
+      result = result.slice(0, firstRectEnd + 2) +
+        `<rect x="0" y="0" width="600" height="260" fill="url(#pixel-grid)"/>` +
+        result.slice(firstRectEnd + 2)
+    }
+  }
 
-  result = result.replace(replaceRegex, (fullMatch, before, close) => {
-    // Remove existing width and add class
-    const withoutWidth = before.replace(/width="[0-9.]+"/, `width="${progressBarWidth}"`)
-    return `${withoutWidth} class="progress-fill-bar"${close}`
-  })
+  // Insert animated progress bar fill before the closing </svg> tag
+  if (trackRect) {
+    const progressBar = `<rect class="progress-fill-bar" x="${trackRect.x + 2}" y="${trackRect.y + 2}" width="0" height="${trackRect.height - 4}" fill="${fillColor}" clip-path="url(#progress-clip)"/>`
+    result = result.replace('</svg>', `${progressBar}</svg>`)
+  }
 
   return result
 }

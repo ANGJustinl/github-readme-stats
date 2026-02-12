@@ -36,7 +36,6 @@ export async function GET(request: NextRequest) {
     const stats = await fetchGitHubStats(params.username)
 
 
-    console.log("[v0] Rendering stats card for:", params.username)
     const svg = await renderStatsCard(stats, params.username, {
       theme: params.theme,
       locale: params.locale,
@@ -45,13 +44,6 @@ export async function GET(request: NextRequest) {
       showIcons: params.showIcons,
       customColors: Object.keys(params.customColors).length > 0 ? params.customColors : undefined,
     })
-
-    // Debug: log a snippet of SVG to check rect elements
-    const rectMatches = svg.match(/<rect[^>]*>/g) || []
-    console.log("[v0] Total rect elements:", rectMatches.length)
-    rectMatches.forEach((r, i) => console.log(`[v0] rect[${i}]:`, r))
-    console.log("[v0] Has progress-fill-bar class:", svg.includes("progress-fill-bar"))
-    console.log("[v0] Has animation style:", svg.includes("progress-grow"))
 
     // Return SVG with appropriate headers and caching
     return new NextResponse(svg, {
