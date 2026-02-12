@@ -1,0 +1,235 @@
+@import 'tailwindcss';
+@import 'tw-animate-css';
+
+@custom-variant dark (&:is(.dark *));
+
+/* Neo-Brutalism + Pixel Art Theme */
+:root {
+  /* Core Colors - Bold & High Contrast */
+  --background: #FEFEFE;
+  --foreground: #0A0A0A;
+  --card: #FFFFFF;
+  --card-foreground: #0A0A0A;
+  --popover: #FFFFFF;
+  --popover-foreground: #0A0A0A;
+  
+  /* Primary - Electric Blue */
+  --primary: #0066FF;
+  --primary-foreground: #FFFFFF;
+  
+  /* Secondary - Cyber Yellow */
+  --secondary: #FFEB3B;
+  --secondary-foreground: #0A0A0A;
+  
+  /* Accent Colors - Vibrant Palette */
+  --accent: #FF3366;
+  --accent-foreground: #FFFFFF;
+  --muted: #F5F5F5;
+  --muted-foreground: #666666;
+  
+  /* Semantic Colors */
+  --destructive: #FF3366;
+  --destructive-foreground: #FFFFFF;
+  --success: #00FF88;
+  --success-foreground: #0A0A0A;
+  --warning: #FFEB3B;
+  --warning-foreground: #0A0A0A;
+  
+  /* Borders - Thick & Bold */
+  --border: #0A0A0A;
+  --input: #0A0A0A;
+  --ring: #0066FF;
+  
+  /* Chart Colors - Pixel Art Palette */
+  --chart-1: #FF3366;
+  --chart-2: #0066FF;
+  --chart-3: #00FF88;
+  --chart-4: #FFEB3B;
+  --chart-5: #9D4EDD;
+  
+  /* Brutalist Radius - Sharp Corners */
+  --radius: 0px;
+  
+  /* Sidebar */
+  --sidebar: #FFFFFF;
+  --sidebar-foreground: #0A0A0A;
+  --sidebar-primary: #0066FF;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: #FFEB3B;
+  --sidebar-accent-foreground: #0A0A0A;
+  --sidebar-border: #0A0A0A;
+  --sidebar-ring: #0066FF;
+}
+
+.dark {
+  /* Dark Mode - Inverted Brutalism */
+  --background: #0A0A0A;
+  --foreground: #FEFEFE;
+  --card: #1A1A1A;
+  --card-foreground: #FEFEFE;
+  --popover: #1A1A1A;
+  --popover-foreground: #FEFEFE;
+  
+  --primary: #00FF88;
+  --primary-foreground: #0A0A0A;
+  
+  --secondary: #9D4EDD;
+  --secondary-foreground: #FEFEFE;
+  
+  --accent: #FF3366;
+  --accent-foreground: #FEFEFE;
+  --muted: #2A2A2A;
+  --muted-foreground: #999999;
+  
+  --destructive: #FF3366;
+  --destructive-foreground: #FEFEFE;
+  --success: #00FF88;
+  --success-foreground: #0A0A0A;
+  --warning: #FFEB3B;
+  --warning-foreground: #0A0A0A;
+  
+  --border: #FEFEFE;
+  --input: #FEFEFE;
+  --ring: #00FF88;
+  
+  --chart-1: #FF3366;
+  --chart-2: #00FF88;
+  --chart-3: #0066FF;
+  --chart-4: #FFEB3B;
+  --chart-5: #9D4EDD;
+  
+  --sidebar: #1A1A1A;
+  --sidebar-foreground: #FEFEFE;
+  --sidebar-primary: #00FF88;
+  --sidebar-primary-foreground: #0A0A0A;
+  --sidebar-accent: #9D4EDD;
+  --sidebar-accent-foreground: #FEFEFE;
+  --sidebar-border: #FEFEFE;
+  --sidebar-ring: #00FF88;
+}
+
+@theme inline {
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-mono: 'Courier New', 'Courier', monospace;
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --radius-sm: 0px;
+  --radius-md: 0px;
+  --radius-lg: 0px;
+  --radius-xl: 0px;
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+    image-rendering: pixelated;
+    image-rendering: -moz-crisp-edges;
+    image-rendering: crisp-edges;
+  }
+}
+
+/* Neo-Brutalism Utilities */
+@layer utilities {
+  .brutalist-shadow {
+    box-shadow: 6px 6px 0px 0px var(--border);
+  }
+  
+  .brutalist-shadow-sm {
+    box-shadow: 3px 3px 0px 0px var(--border);
+  }
+  
+  .brutalist-shadow-lg {
+    box-shadow: 10px 10px 0px 0px var(--border);
+  }
+  
+  .brutalist-shadow-hover {
+    transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  .brutalist-shadow-hover:hover {
+    transform: translate(-2px, -2px);
+    box-shadow: 8px 8px 0px 0px var(--border);
+  }
+  
+  .brutalist-shadow-hover:active {
+    transform: translate(2px, 2px);
+    box-shadow: 2px 2px 0px 0px var(--border);
+  }
+  
+  /* Pixel Art Grid Pattern */
+  .pixel-grid {
+    background-image: 
+      linear-gradient(var(--border) 1px, transparent 1px),
+      linear-gradient(90deg, var(--border) 1px, transparent 1px);
+    background-size: 20px 20px;
+    opacity: 0.03;
+  }
+  
+  /* Pixel Block Effect */
+  .pixel-block {
+    position: relative;
+  }
+  
+  .pixel-block::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: 
+      linear-gradient(45deg, transparent 48%, var(--border) 48%, var(--border) 52%, transparent 52%),
+      linear-gradient(-45deg, transparent 48%, var(--border) 48%, var(--border) 52%, transparent 52%);
+    background-size: 8px 8px;
+    opacity: 0.05;
+    pointer-events: none;
+  }
+  
+  /* Retro Text Shadow */
+  .retro-text {
+    text-shadow: 
+      2px 2px 0px var(--primary),
+      4px 4px 0px var(--accent);
+  }
+  
+  /* Pixel Border */
+  .pixel-border {
+    border: 4px solid var(--border);
+    outline: 2px solid var(--background);
+    outline-offset: -8px;
+  }
+}
