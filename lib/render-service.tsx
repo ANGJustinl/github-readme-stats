@@ -325,8 +325,9 @@ export async function renderStatsCard(
                   overflow: 'hidden',
                 }}
               >
-                {/* Progress Bar Fill */}
+                {/* Progress Bar Fill - use data-progress-bar marker */}
                 <div
+                  data-progress-bar="true"
                   style={{
                     display: 'flex',
                     width: `${Math.min(rankInfo.percentile, 100)}%`,
@@ -366,7 +367,55 @@ export async function renderStatsCard(
     },
   )
 
-  return svg
+  // Post-process SVG: inject CSS animation for the progress bar fill
+  const percentile = Math.min(rankInfo.percentile, 100)
+  const animatedSvg = injectProgressBarAnimation(svg, rankInfo.color, percentile)
+
+  return animatedSvg
+}
+
+/**
+ * Inject a CSS @keyframes animation into the SVG for the progress bar.
+ * Finds the rect element matching the progress bar fill color and adds an animation class.
+ */
+function injectProgressBarAnimation(svg: string, fillColor: string, targetWidth: number): string {
+  // Satori renders divs as <rect> elements. Find the progress bar fill by its fill color.
+  // The fill color in SVG will be the rankInfo.color (e.g. "#4CAF50").
+  // We need to find the specific rect that represents the progress bar fill and animate it.
+
+  const styleBlock = `
+<style>
+  @keyframes progress-fill {
+    from { width: 0; }
+    to { width: ${targetWidth}%; }
+  }
+  .progress-bar-fill {
+    animation: progress-fill 1.2s ease-out forwards;
+  }
+</style>`
+
+  // Insert style block right after opening <svg> tag
+  let result = svg.replace(/<svg([^>]*)>/, `<svg$1>${styleBlock}`)
+
+  // Satori renders our progress bar fill as a <div> which becomes a <rect> or a <foreignObject> child.
+  // In satori's SVG output, the fill is typically a <rect> with the exact fill color.
+  // We look for a rect with the progress bar's color and a small height (~8px region)
+  // and add the animation class to it.
+  const colorHex = fillColor.toLowerCase()
+  const rectRegex = new RegExp(
+    `(<rect[^>]*fill="${colorHex}"[^>]*height="[0-9.]+"[^>]*)(/?>)`,
+    'i'
+  )
+  result = result.replace(rectRegex, (match, before, close) => {
+    // Only add class if this looks like a narrow bar (height < 20)
+    const heightMatch = before.match(/height="([0-9.]+)"/)
+    if (heightMatch && parseFloat(heightMatch[1]) < 20) {
+      return `${before} class="progress-bar-fill"${close}`
+    }
+    return match
+  })
+
+  return result
 }
 
 function StatItem({
